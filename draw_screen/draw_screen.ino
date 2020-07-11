@@ -37,9 +37,10 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 void setup(void) {
+  Serial.begin(9600);
   tft.reset();
   tft.begin(0x8357);
-  tft.setRotation(2); 
+  //tft.setRotation(2); 
   tft.fillScreen(BLACK);
   pinMode(13, OUTPUT);
 }
@@ -53,13 +54,22 @@ void loop()
   //get data
   TSPoint p = ts.getPoint();
   
+  
   digitalWrite(13, LOW);
   
   pinMode(XM, OUTPUT);
   pinMode(YP, OUTPUT);
   if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-    p.y = map(p.y, TS_MINX, TS_MAXX, tft.width(), 0);
-    p.x = map(p.x, TS_MINY, TS_MAXY, tft.height(), 0);
+    int a = p.x;
+    int b = p.y;
+    p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
+    p.x = map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
     tft.fillCircle(p.y, p.x, 4, WHITE);
+    /*
+    Serial.print("X = "); Serial.print(a);Serial.print(" to ");Serial.println(p.x);
+    Serial.print("Y = "); Serial.print(b);Serial.print(" to ");Serial.println(p.y);
+    
+    delay(500);
+    */
   }
 }
