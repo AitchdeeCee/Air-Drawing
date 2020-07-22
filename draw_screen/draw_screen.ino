@@ -48,8 +48,29 @@ void setup(void) {
 #define MINPRESSURE 10
 #define MAXPRESSURE 1000
 
+short MSB = 0;  // to build  2 byte integer from serial in byte
+short LSB = 0;  // to build  2 byte integer from serial in byte
+int   MSBLSB = 0;  //to build  2 byte integer from serial in byte
+
 void loop()
 {
+  //while(Serial.available() <= 0){
+    if (Serial.available() > 0){
+      MSB = Serial.read();
+      delay(5);
+      LSB = Serial.read();
+      MSBLSB=word(MSB, LSB);
+      Serial.print(MSB);
+      delay(5);
+
+      MSB = Serial.read();
+      delay(5);
+      LSB = Serial.read();
+      MSBLSB=word(MSB, LSB);
+      Serial.print(MSBLSB);
+      delay(5);
+    }  
+  //}
   digitalWrite(13, HIGH);
   //get data
   TSPoint p = ts.getPoint();
