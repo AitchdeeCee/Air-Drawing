@@ -9,6 +9,7 @@
 #include "opencv2/imgproc.hpp"
 #include "Tserial.h"
 #include "Tserial.cpp"
+#include "Windows.h""
 #include <iostream>
 
 const char* const port = "\\\\.\\COM6";
@@ -19,6 +20,9 @@ using namespace std;
 //Arduino
 int arduino_command;
 Tserial* arduino_com;
+short MSBLSB = 0;
+unsigned char MSB = 0;
+unsigned char LSB = 0;
 
 //initial min and max HSV filter values.
 //these will be changed using trackbars
@@ -154,8 +158,16 @@ void trackFilteredObject(int& x, int& y, Mat threshold, Mat& cameraFeed) {
 					objectFound = true;
 					refArea = area;
 					cout << "X: " << x / 2 << " Y: " << y / 2 << "\n";
-					arduino_com->sendChar(x);
-					arduino_com->sendChar(y);
+					LSB = x & 0xff;
+					// read next significant byte 
+					MSB = (x >> 8) & 0xff;
+					arduino_com->sendChar(MSB);
+					arduino_com->sendChar(LSB);
+
+					LSB = y & 0xff;
+					MSB = (y >> 8) & 0xff;
+					arduino_com->sendChar(MSB);
+					arduino_com->sendChar(LSB);
 				}
 				else objectFound = false;
 
@@ -175,11 +187,38 @@ void trackFilteredObject(int& x, int& y, Mat threshold, Mat& cameraFeed) {
 
 int main(int argc, char* argv[])
 {
-	
+	// Setup serial port connection and needed variables.
+	HANDLE hSerial = CreateFile(L"COM6", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+	if (hSerial != INVALID_HANDLE_VALUE)
+	{
+		printf("Port opened! \n");
+
+		DCB dcbSerialParams;
+		GetCommState(hSerial, &dcbSerialParams);
+
+		dcbSerialParams.BaudRate = CBR_9600;
+		dcbSerialParams.ByteSize = 8;
+		dcbSerialParams.Parity = NOPARITY;
+		dcbSerialParams.StopBits = ONESTOPBIT;
+
+		SetCommState(hSerial, &dcbSerialParams);
+	}
+	else
+	{
+		if (GetLastError() == ERROR_FILE_NOT_FOUND)
+		{
+			printf("Serial port doesn't exist! \n");
+		}
+
+		printf("Error while setting up serial port! \n");
+	}
+
 	// serial to Arduino setup 
 	arduino_com = new Tserial();
 	if (arduino_com != 0) {
 		arduino_com->connect(const_cast<char*>(port), 9600, spNONE);
+		printf("Connecting...");
 	}
 	// serial to Arduino setup 
 	//some boolean variables for different functionality within this
