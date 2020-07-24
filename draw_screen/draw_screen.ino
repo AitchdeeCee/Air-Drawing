@@ -54,21 +54,11 @@ int   MSBLSB = 0;  //to build  2 byte integer from serial in byte
 
 void loop()
 {
+  int a = 0;
   //while(Serial.available() <= 0){
     if (Serial.available() > 0){
-      MSB = Serial.read();
-      delay(5);
-      LSB = Serial.read();
-      MSBLSB=word(MSB, LSB);
-      Serial.print(MSB);
-      delay(5);
-
-      MSB = Serial.read();
-      delay(5);
-      LSB = Serial.read();
-      MSBLSB=word(MSB, LSB);
-      Serial.print(MSBLSB);
-      delay(5);
+      a = Serial.read();
+      Serial.print(a);
     }  
   //}
   digitalWrite(13, HIGH);
