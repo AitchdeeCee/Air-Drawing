@@ -7,8 +7,6 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
-#include "Tserial.h"
-#include "Tserial.cpp"
 #include "Windows.h""
 #include <iostream>
 
@@ -17,12 +15,7 @@ const char* const port = "\\\\.\\COM6";
 using namespace cv;
 using namespace std;
 
-//Arduino
-int arduino_command;
-Tserial* arduino_com;
-short MSBLSB = 0;
-unsigned char MSB = 0;
-unsigned char LSB = 0;
+HANDLE hSerial = CreateFile(L"COM6", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 //initial min and max HSV filter values.
 //these will be changed using trackbars
@@ -32,6 +25,7 @@ int S_MIN = 128;
 int S_MAX = 256;
 int V_MIN = 68;
 int V_MAX = 110;
+
 //default capture width and height
 const int FRAME_WIDTH = 640;
 const int FRAME_HEIGHT = 480;
@@ -54,35 +48,7 @@ string intToString(int number) {
 	ss << number;
 	return ss.str();
 }
-/*
-void createTrackbars() {
-	//create window for trackbars
 
-
-	namedWindow(trackbarWindowName, 0);
-	//create memory to store trackbar name on window
-	char TrackbarName[50];
-	sprintf_s(TrackbarName, "H_MIN");
-	sprintf_s(TrackbarName, "H_MAX");
-	sprintf_s(TrackbarName, "S_MIN");
-	sprintf_s(TrackbarName, "S_MAX");
-	sprintf_s(TrackbarName, "V_MIN");
-	sprintf_s(TrackbarName, "V_MAX");
-	//create trackbars and insert them into window
-	//3 parameters are: the address of the variable that is changing when the trackbar is moved(eg.H_LOW),
-	//the max value the trackbar can move (eg. H_HIGH), 
-	//and the function that is called whenever the trackbar is moved(eg. on_trackbar)
-	//                                  ---->    ---->     ---->      
-	createTrackbar("H_MIN", trackbarWindowName, &H_MIN, H_MAX, on_trackbar);
-	createTrackbar("H_MAX", trackbarWindowName, &H_MAX, H_MAX, on_trackbar);
-	createTrackbar("S_MIN", trackbarWindowName, &S_MIN, S_MAX, on_trackbar);
-	createTrackbar("S_MAX", trackbarWindowName, &S_MAX, S_MAX, on_trackbar);
-	createTrackbar("V_MIN", trackbarWindowName, &V_MIN, V_MAX, on_trackbar);
-	createTrackbar("V_MAX", trackbarWindowName, &V_MAX, V_MAX, on_trackbar);
-
-
-}
-*/
 void drawObject(int x, int y, Mat& frame) {
 
 	//use some of the openCV drawing functions to draw crosshairs
@@ -139,6 +105,7 @@ void trackFilteredObject(int& x, int& y, Mat threshold, Mat& cameraFeed) {
 	//use moments method to find our filtered object
 	double refArea = 0;
 	bool objectFound = false;
+	
 	if (hierarchy.size() > 0) {
 		int numObjects = hierarchy.size();
 		//if number of objects greater than MAX_NUM_OBJECTS we have a noisy filter
@@ -158,16 +125,8 @@ void trackFilteredObject(int& x, int& y, Mat threshold, Mat& cameraFeed) {
 					objectFound = true;
 					refArea = area;
 					cout << "X: " << x / 2 << " Y: " << y / 2 << "\n";
-					LSB = x & 0xff;
-					// read next significant byte 
-					MSB = (x >> 8) & 0xff;
-					arduino_com->sendChar(MSB);
-					arduino_com->sendChar(LSB);
 
-					LSB = y & 0xff;
-					MSB = (y >> 8) & 0xff;
-					arduino_com->sendChar(MSB);
-					arduino_com->sendChar(LSB);
+
 				}
 				else objectFound = false;
 
@@ -188,8 +147,7 @@ void trackFilteredObject(int& x, int& y, Mat threshold, Mat& cameraFeed) {
 int main(int argc, char* argv[])
 {
 	// Setup serial port connection and needed variables.
-	HANDLE hSerial = CreateFile(L"COM6", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-
+	
 	if (hSerial != INVALID_HANDLE_VALUE)
 	{
 		printf("Port opened! \n");
@@ -213,14 +171,12 @@ int main(int argc, char* argv[])
 
 		printf("Error while setting up serial port! \n");
 	}
+	char hungche[] = "c";
+	DWORD btsIO;
+	hungche[0] = 'c';
+	WriteFile(hSerial, hungche, strlen(hungche), &btsIO, NULL);
 
-	// serial to Arduino setup 
-	arduino_com = new Tserial();
-	if (arduino_com != 0) {
-		arduino_com->connect(const_cast<char*>(port), 9600, spNONE);
-		printf("Connecting...");
-	}
-	// serial to Arduino setup 
+
 	//some boolean variables for different functionality within this
 	//program
 	bool trackObjects = true;
@@ -278,10 +234,7 @@ int main(int argc, char* argv[])
 
 		}
 	}
-	// Serial to Arduino - shutdown
-	arduino_com->disconnect();
-	delete arduino_com;
-	arduino_com = 0;
-	// Serial to Arduino - shutdown
+
+	CloseHandle(hSerial);
 	return 0;
 }
