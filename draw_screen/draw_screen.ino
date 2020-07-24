@@ -33,8 +33,13 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #define YELLOW  0xFFE0
 #define WHITE   0xFFFF
 
+short MSB = 0;  // to build  2 byte integer from serial in byte
+short LSB = 0;  // to build  2 byte integer from serial in byte
+int   MSBLSB = 0;  //to build  2 byte integer from serial in byte
 
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
+String receivedString;
+String receivedString1;
 
 void setup(void) {
   Serial.begin(9600);
@@ -48,19 +53,19 @@ void setup(void) {
 #define MINPRESSURE 10
 #define MAXPRESSURE 1000
 
-short MSB = 0;  // to build  2 byte integer from serial in byte
-short LSB = 0;  // to build  2 byte integer from serial in byte
-int   MSBLSB = 0;  //to build  2 byte integer from serial in byte
 
 void loop()
 {
-  int a = 0;
-  //while(Serial.available() <= 0){
-    if (Serial.available() > 0){
-      a = Serial.read();
-      Serial.print(a);
-    }  
-  //}
+  if (Serial.available() > 0){
+    MSB = Serial.read();
+    delay(5);
+    LSB = Serial.read();
+    MSBLSB=word(MSB, LSB);
+    tft.print(MSB);
+    delay(5);
+  }
+
+  
   digitalWrite(13, HIGH);
   //get data
   TSPoint p = ts.getPoint();
